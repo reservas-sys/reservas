@@ -1,215 +1,184 @@
-/* ==========================================
-   TRANQUILLUM CORE - SYSTEM V1.0
-   ========================================== */
+// ==========================================
+// CONFIGURACIÓN FIREBASE (TRANQUILLIUM)
+// ==========================================
+console.log("Iniciando Sistema Viventura...");
 
-// --- CONFIGURACIÓN FIREBASE (Pon la de Viventura cuando esté lista) ---
-// Por ahora usaremos autenticación simulada para que avances.
-const auth = null; // Simulamos auth local por ahora
+const firebaseConfig = {
+    apiKey: "AIzaSyD6II6k1Y4_bpzeH45hj_7-nQpxYmbP0wE",
+    authDomain: "tranquillium-32bb8.firebaseapp.com",
+    projectId: "tranquillium-32bb8",
+    storageBucket: "tranquillium-32bb8.firebasestorage.app",
+    messagingSenderId: "478019073507",
+    appId: "1:478019073507:web:740e0b826d7881729c1cd6"
+};
 
-// --- DATOS SIMULADOS (BASE DE DATOS INMORTAL) ---
-const DB_CLIENTES = [
-    { id: 101, nombre: "Juan Pérez", destino: "Punta Cana", fecha: "15/02/2026", estado: "paz_salvo", asesor: "Katherine", foto: "https://randomuser.me/api/portraits/men/32.jpg" },
-    { id: 102, nombre: "Maria Gomez", destino: "Cancún", fecha: "20/03/2026", estado: "pendiente", asesor: "Daniela", foto: "https://randomuser.me/api/portraits/women/44.jpg" },
-    { id: 103, nombre: "Carlos Ruiz", destino: "San Andrés", fecha: "10/01/2026", estado: "mora", asesor: "Valentina", foto: "https://randomuser.me/api/portraits/men/85.jpg" }
-];
+// Inicializar Firebase
+try {
+    if (typeof firebase === 'undefined') {
+        console.error("ERROR CRÍTICO: El SDK de Firebase no ha cargado en el HTML.");
+    } else {
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+            console.log("Firebase conectado correctamente.");
+        }
+    }
+} catch (e) {
+    console.error("Error inicializando Firebase:", e);
+}
 
-// --- ELEMENTOS DOM ---
+const auth = typeof firebase !== 'undefined' ? firebase.auth() : null;
+const storage = typeof firebase !== 'undefined' ? firebase.storage() : null;
+
+// ==========================================
+// ELEMENTOS DEL DOM
+// ==========================================
 const loginOverlay = document.getElementById('login-overlay');
-const loginForm = document.getElementById('login-form');
 const mainApp = document.getElementById('main-app');
-const workspace = document.getElementById('workspace');
-const titleView = document.getElementById('current-view-title');
+const loginForm = document.getElementById('login-form');
+const usernameInput = document.getElementById('username-input');
+const passwordInput = document.getElementById('password-input');
+const loginError = document.getElementById('login-error');
+const logoutBtn = document.getElementById('logout-btn');
+const workspace = document.getElementById('workspace'); // Donde se carga el contenido
 
-// --- SISTEMA DE LOGIN (SIMULADO) ---
-const MOCK_USERS = {
-    'admin': { 
-        pass: 'admin123', 
-        name: 'Gerencia General', 
-        role: 'Administrador', 
-        initials: 'AD' 
-    },
-    'katherine': { 
-        pass: '123456', 
-        name: 'Katherine Rueda', 
-        role: 'Asesor Comercial', 
-        initials: 'KR' 
-    },
-    'daniela': { 
-        pass: '123456', 
-        name: 'Daniela Ardila', 
-        role: 'Asesor Comercial', 
-        initials: 'DA' 
+// ==========================================
+// LÓGICA DE AUTENTICACIÓN (LOGIN REAL)
+// ==========================================
+
+// 1. Manejar el Submit del Login
+if (loginForm) {
+    loginForm.onsubmit = function (e) {
+        e.preventDefault();
+        
+        // Asumimos dominio por defecto si no lo escriben
+        let email = usernameInput.value.trim();
+        if (!email.includes('@')) {
+            email = email + '@tranquillium.com';
+        }
+        
+        const password = passwordInput.value.trim();
+
+        auth.signInWithEmailAndPassword(email, password)
+            .then((userCredential) => {
+                // Login exitoso, el onAuthStateChanged se encargará del resto
+                console.log("Usuario logueado:", userCredential.user.email);
+            })
+            .catch((error) => {
+                console.error("Error login:", error);
+                loginError.textContent = 'Usuario o contraseña incorrectos';
+                loginError.style.display = 'block';
+                passwordInput.value = '';
+            });
+    };
+}
+
+// 2. Manejar Logout
+if (logoutBtn) {
+    logoutBtn.onclick = function () {
+        auth.signOut().then(() => {
+            console.log("Sesión cerrada");
+            window.location.reload();
+        });
+    };
+}
+
+// 3. Escuchador de Estado (Persistencia)
+if (auth) {
+    auth.onAuthStateChanged((user) => {
+        if (user) {
+            // --- USUARIO LOGUEADO ---
+            console.log("Acceso concedido a:", user.email);
+            
+            // Ocultar login, mostrar app
+            if (loginOverlay) loginOverlay.style.display = 'none';
+            if (mainApp) mainApp.style.display = 'flex';
+
+            // Configurar interfaz según usuario
+            const username = user.email.split('@')[0];
+            updateUserProfile(username);
+            
+            // Cargar Dashboard por defecto
+            loadView('home');
+
+        } else {
+            // --- NO LOGUEADO ---
+            if (loginOverlay) loginOverlay.style.display = 'flex';
+            if (mainApp) mainApp.style.display = 'none';
+        }
+    });
+}
+
+// Actualizar datos visuales del perfil
+function updateUserProfile(username) {
+    const nameDisplay = document.getElementById('user-name-display');
+    const roleDisplay = document.getElementById('user-role-display');
+    const initialsDisplay = document.getElementById('user-initials');
+
+    if (nameDisplay) nameDisplay.textContent = username.toUpperCase();
+    if (initialsDisplay) initialsDisplay.textContent = username.substring(0, 2).toUpperCase();
+
+    // Roles simples basados en el nombre de usuario
+    let role = 'Asesor Comercial';
+    if (username === 'admin' || username === 'gerencia') role = 'Administrador';
+    if (username === 'reservas') role = 'Coord. Reservas';
+    
+    if (roleDisplay) roleDisplay.textContent = role;
+}
+
+
+// ==========================================
+// NAVEGACIÓN Y VISTAS
+// ==========================================
+window.loadView = function(viewName) {
+    // Actualizar menú activo
+    document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+    // Limpiar área
+    workspace.innerHTML = '';
+
+    if (viewName === 'home') {
+        document.getElementById('current-view-title').textContent = "Resumen Operativo";
+        renderDashboard();
+    } 
+    else if (viewName === 'crm') {
+        document.getElementById('current-view-title').textContent = "Gestión de Clientes";
+        renderCRM();
+    }
+    else if (viewName === 'quotes') {
+        document.getElementById('current-view-title').textContent = "Generador de Cotizaciones";
+        renderTool('cotizador');
+    }
+    else if (viewName === 'confirms') {
+        document.getElementById('current-view-title').textContent = "Generador de Confirmación";
+        renderTool('confirmador');
     }
 };
 
-loginForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    
-    // Obtenemos lo que escribió el usuario y lo convertimos a minúsculas
-    const userKey = document.getElementById('username-input').value.trim().toLowerCase();
-    const pass = document.getElementById('password-input').value.trim();
-    const loginErrorMsg = document.getElementById('login-error');
-
-    // Verificamos si el usuario existe y la contraseña coincide
-    if (MOCK_USERS[userKey] && MOCK_USERS[userKey].pass === pass) {
-        
-        // 1. Ocultar Login y mostrar App
-        loginOverlay.style.display = 'none';
-        mainApp.style.display = 'flex';
-        
-        // 2. Cargar datos del usuario en el Menú Lateral
-        const userData = MOCK_USERS[userKey];
-        document.getElementById('user-name-display').textContent = userData.name;
-        document.getElementById('user-role-display').textContent = userData.role;
-        document.getElementById('user-initials').textContent = userData.initials;
-        
-        // 3. Resetear error
-        loginErrorMsg.style.display = 'none';
-        
-        // 4. Cargar vista inicial
-        loadView('home'); 
-
-    } else {
-        // Mostrar error si falla
-        loginErrorMsg.textContent = "Usuario o contraseña incorrectos";
-        loginErrorMsg.style.display = 'block';
-        // Temblor visual (opcional)
-        document.querySelector('.login-box').animate([
-            { transform: 'translateX(0)' },
-            { transform: 'translateX(-10px)' },
-            { transform: 'translateX(10px)' },
-            { transform: 'translateX(0)' }
-        ], { duration: 300 });
-    }
-});
-document.getElementById('logout-btn').addEventListener('click', () => {
-    location.reload(); // Recargar para salir
-});
-
-// --- ENRUTADOR DE VISTAS ---
-window.loadView = function(viewName) {
-    // 1. Actualizar menú activo
-    document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
-    // (Aquí podrías añadir lógica para marcar el botón activo)
-
-    // 2. Renderizar contenido
-    workspace.innerHTML = ''; // Limpiar área
-
-    switch(viewName) {
-        case 'home':
-            titleView.textContent = "Resumen Operativo";
-            renderDashboard();
-            break;
-        case 'crm':
-            titleView.textContent = "Gestión de Clientes (CRM)";
-            renderCRM();
-            break;
-        case 'quotes':
-            titleView.textContent = "Generador de Cotizaciones";
-            renderTool('cotizador');
-            break;
-        case 'confirms':
-            titleView.textContent = "Generador de Confirmaciones";
-            renderTool('confirmador');
-            break;
-    }
-}
-
-// --- VISTA 1: DASHBOARD (HOME) ---
 function renderDashboard() {
     workspace.innerHTML = `
         <div style="text-align: center; padding: 50px;">
             <img src="https://i.imgur.com/GiTvvrW.png" width="200" style="margin-bottom:20px; filter: grayscale(100%); opacity:0.5;">
-            <h3>¡Bienvenido a Tranquillum!</h3>
-            <p style="color:#666;">Selecciona un módulo en el menú izquierdo para comenzar.</p>
-            
-            <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:20px; margin-top:40px;">
-                <div class="client-card" style="background:#fff7ed; border-color: #FE8050;">
-                    <h4>🔥 Tareas Críticas</h4>
-                    <p style="font-size:2rem; font-weight:bold; color:#FE8050;">3</p>
-                    <small>Vencen hoy</small>
-                </div>
-                <div class="client-card" style="background:#ecfdf5; border-color: #22c55e;">
-                    <h4>✈️ Viajan esta semana</h4>
-                    <p style="font-size:2rem; font-weight:bold; color:#22c55e;">8</p>
-                    <small>Todo listo</small>
-                </div>
-                <div class="client-card" style="background:#f0f9ff; border-color: #14A7CA;">
-                    <h4>💰 Recaudo Mes</h4>
-                    <p style="font-size:2rem; font-weight:bold; color:#14A7CA;">$ 45M</p>
-                    <small>Meta: $ 60M</small>
-                </div>
-            </div>
+            <h3>Bienvenido a Viventura System</h3>
+            <p class="text-muted">Sistema conectado a Firebase.</p>
         </div>
     `;
 }
 
-// --- VISTA 2: CRM (CLIENTES) ---
 function renderCRM() {
-    // Barra de búsqueda
-    let html = `
-        <div class="search-bar-container">
-            <i class="fas fa-search" style="color:#94a3b8; padding-top:12px;"></i>
-            <input type="text" class="search-input" placeholder="Buscar por Nombre, Cédula, Destino o Asesor...">
-            <button class="btn-primary-v">Filtrar</button>
-        </div>
-        
-        <div class="clients-grid">
-    `;
-
-    // Renderizar tarjetas de clientes simulados
-    DB_CLIENTES.forEach(cliente => {
-        let badgeClass = 'status-ok';
-        let badgeText = 'PAZ Y SALVO';
-        if(cliente.estado === 'pendiente') { badgeClass = 'status-alert'; badgeText = 'PENDIENTE PAGO'; }
-        if(cliente.estado === 'mora') { badgeClass = 'status-danger'; badgeText = 'PAGO VENCIDO'; }
-
-        html += `
-            <div class="client-card">
-                <span class="status-badge ${badgeClass}">${badgeText}</span>
-                <div class="client-header">
-                    <img src="${cliente.foto}" class="client-photo">
-                    <div class="client-info">
-                        <h4>${cliente.nombre}</h4>
-                        <span>Asesor: ${cliente.asesor}</span>
-                    </div>
-                </div>
-                <div class="client-stats">
-                    <div class="stat"><strong>Destino</strong>${cliente.destino}</div>
-                    <div class="stat"><strong>Fecha</strong>${cliente.fecha}</div>
-                </div>
-                <div class="client-actions">
-                    <button class="btn-icon"><i class="fas fa-eye"></i> Ver</button>
-                    <button class="btn-icon"><i class="fas fa-file-pdf"></i> Docs</button>
-                    <button class="btn-icon" style="color:#25D366;"><i class="fab fa-whatsapp"></i></button>
-                </div>
-            </div>
-        `;
-    });
-
-    html += `</div>`;
-    workspace.innerHTML = html;
+    workspace.innerHTML = `<h3 style="padding:20px;">Módulo CRM en construcción...</h3>`;
 }
 
-// --- VISTA 3: HERRAMIENTAS (IFRAMES O CÓDIGO INYECTADO) ---
-function renderTool(toolName) {
-    // Aquí es donde integraremos tus códigos anteriores.
-    // Por ahora pondré un placeholder visual.
+function renderTool(toolType) {
+    // Aquí cargaremos los templates que ya tienes en el HTML
+    // Por ahora un placeholder para verificar que el login funciona
     workspace.innerHTML = `
-        <div class="embedded-tool" style="padding:40px; text-align:center;">
-            <h3>Cargando herramienta: ${toolName.toUpperCase()}...</h3>
-            <p>Aquí se mostrará el formulario de ${toolName} tal como lo diseñamos.</p>
-            <br>
-            <div class="spinner-border text-primary" style="width: 3rem; height: 3rem; border: 4px solid #eee; border-top-color: #FE8050; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+        <div style="padding:40px; text-align:center;">
+            <h3>Cargando ${toolType.toUpperCase()}...</h3>
+            <div class="spinner"></div>
         </div>
     `;
-    
-    // NOTA: En el siguiente paso, copiaremos y pegaremos aquí el HTML 
-    // de los formularios de Cotizador y Confirmador para que aparezcan dentro.
 }
 
-// Inicialización de Mapas (Dummy para que no de error)
-function initApp() {
-    console.log("Google Maps Cargado");
+// Inicialización de Mapas (Evita errores si no se usa)
+function initAutocomplete() {
+    console.log("Mapas listos");
 }
-
