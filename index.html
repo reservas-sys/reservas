@@ -12,9 +12,12 @@
     <!-- ESTILOS -->
     <link rel="stylesheet" href="style.css">
     
-    <!-- LIBRERÍAS DE PDF (Necesarias para los módulos) -->
+    <!-- LIBRERÍAS DE PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <!-- LIBRERÍA EMAILJS -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 </head>
 <body>
 
@@ -36,7 +39,7 @@
     <!-- === APP PRINCIPAL === -->
     <div id="main-app" style="display:none;">
         
-        <!-- SIDEBAR (MENÚ LATERAL) -->
+        <!-- SIDEBAR -->
         <aside class="sidebar">
             <div class="sidebar-header">
                 <img src="https://i.imgur.com/GiTvvrW.png" alt="Viventura">
@@ -66,10 +69,10 @@
             </ul>
 
             <div class="user-profile">
-                <div class="user-avatar" id="user-initials">AD</div>
+                <div class="user-avatar" id="user-initials">US</div>
                 <div class="user-info">
-                    <strong id="user-name-display">Administrador</strong>
-                    <small id="user-role-display">Gerencia</small>
+                    <strong id="user-name-display">Usuario</strong>
+                    <small id="user-role-display">Asesor</small>
                 </div>
                 <button id="logout-btn" class="logout-mini" style="margin-left: auto;">
                     <i class="fas fa-sign-out-alt"></i>
@@ -77,34 +80,35 @@
             </div>
         </aside>
 
-        <!-- CONTENIDO DERECHA -->
+        <!-- CONTENIDO -->
         <main class="main-content">
-            
-            <!-- BARRA SUPERIOR -->
             <header class="top-header">
                 <div class="page-title">
                     <h2 id="current-view-title">Dashboard General</h2>
                 </div>
                 <div class="top-actions">
                     <button class="btn-icon" title="Notificaciones"><i class="fas fa-bell"></i></button>
-                    <button class="btn-primary-v" onclick="loadView('crm')">+ Nuevo Cliente</button>
                 </div>
             </header>
 
-            <!-- ÁREA DE TRABAJO DINÁMICA -->
             <div id="workspace" class="workspace">
-                <!-- AQUÍ SE CARGAN LOS MÓDULOS CON JAVASCRIPT -->
+                <!-- Carga dinámica -->
             </div>
-
         </main>
     </div>
 
-    <!-- FIREBASE & LOGICA -->
+    <!-- === IMPORTANTE: LIBRERÍAS DE FIREBASE CORREGIDAS === -->
+    <!-- 1. App (Base) -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <!-- 2. Auth (Login) -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <!-- 3. Storage (Archivos) - ESTA FALTABA -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+    
+    <!-- LÓGICA PRINCIPAL -->
     <script src="script.js"></script>
 
-    <!-- MAPS API (PONER TU CLAVE AL FINAL) -->
+    <!-- GOOGLE MAPS (NOMBRE DE FUNCIÓN CORREGIDO: initApp) -->
     <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyASTSvQgNsR-4wQeIuHAd6S9_fTmaKG56g&libraries=places&callback=initApp"></script>
 </body>
 </html>
