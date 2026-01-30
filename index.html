@@ -4,111 +4,134 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tranquillum - Viventura System</title>
-    
-    <!-- FUENTES E ICONOS -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
-    
-    <!-- ESTILOS -->
     <link rel="stylesheet" href="style.css">
     
-    <!-- LIBRERÍAS DE PDF -->
+    <!-- LIBRERÍAS (PDF + FIREBASE) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    
-    <!-- LIBRERÍA EMAILJS -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 </head>
 <body>
 
-    <!-- === PANTALLA DE LOGIN === -->
+    <!-- LOGIN -->
     <div id="login-overlay">
         <div class="login-box">
-            <img src="https://i.imgur.com/GiTvvrW.png" alt="Viventura" class="login-logo">
-            <h2 style="font-size: 20px; color: var(--text-dark); margin-bottom: 10px;">Acceso al Sistema</h2>
-            <p style="color: #64748b; font-size: 14px; margin-bottom: 20px;">Identifícate para continuar</p>
+            <img src="https://i.imgur.com/GiTvvrW.png" alt="Vivantura" class="login-logo">
+            <h2 style="font-size:18px; margin-bottom:10px;">Sistema Tranquillum</h2>
             <form id="login-form">
-                <input type="text" id="username-input" placeholder="Usuario (ej: katherine)" required>
+                <input type="text" id="username-input" placeholder="Usuario" required>
                 <input type="password" id="password-input" placeholder="Contraseña" required>
-                <button type="submit">Ingresar a Tranquillum</button>
+                <button type="submit">Ingresar</button>
             </form>
-            <p id="login-error" class="error-mensaje">Credenciales incorrectas</p>
+            <p id="login-error" class="error-mensaje">Acceso Denegado</p>
         </div>
     </div>
 
-    <!-- === APP PRINCIPAL === -->
+    <!-- APP -->
     <div id="main-app" style="display:none;">
-        
-        <!-- SIDEBAR -->
         <aside class="sidebar">
-            <div class="sidebar-header">
-                <img src="https://i.imgur.com/GiTvvrW.png" alt="Viventura">
-            </div>
-            
+            <div class="sidebar-header"><img src="https://i.imgur.com/GiTvvrW.png" alt="Vivantura"></div>
             <ul class="nav-menu">
-                <li class="nav-item">
-                    <button class="nav-btn active" onclick="loadView('home')">
-                        <i class="fas fa-home"></i> Inicio / Dashboard
-                    </button>
-                </li>
-                <li class="nav-item">
-                    <button class="nav-btn" onclick="loadView('crm')">
-                        <i class="fas fa-users"></i> Clientes (CRM)
-                    </button>
-                </li>
-                <li class="nav-item">
-                    <button class="nav-btn" onclick="loadView('quotes')">
-                        <i class="fas fa-file-invoice-dollar"></i> Generar Cotización
-                    </button>
-                </li>
-                <li class="nav-item">
-                    <button class="nav-btn" onclick="loadView('confirms')">
-                        <i class="fas fa-check-circle"></i> Generar Confirmación
-                    </button>
-                </li>
+                <li class="nav-item"><button class="nav-btn active" onclick="loadView('home')"><i class="fas fa-home"></i> Inicio</button></li>
+                <li class="nav-item"><button class="nav-btn" onclick="loadView('crm')"><i class="fas fa-users"></i> Clientes (CRM)</button></li>
+                <li class="nav-item"><button class="nav-btn" onclick="loadView('quotes')"><i class="fas fa-file-invoice"></i> Cotizador Pro</button></li>
+                <li class="nav-item"><button class="nav-btn" onclick="loadView('confirms')"><i class="fas fa-check-circle"></i> Confirmador</button></li>
             </ul>
-
             <div class="user-profile">
-                <div class="user-avatar" id="user-initials">US</div>
-                <div class="user-info">
-                    <strong id="user-name-display">Usuario</strong>
-                    <small id="user-role-display">Asesor</small>
-                </div>
-                <button id="logout-btn" class="logout-mini" style="margin-left: auto;">
-                    <i class="fas fa-sign-out-alt"></i>
-                </button>
+                <div class="user-avatar" id="user-initials">U</div>
+                <div class="user-info"><strong id="user-name-display">Usuario</strong><small id="user-role-display">Asesor</small></div>
+                <button id="logout-btn" class="logout-mini"><i class="fas fa-sign-out-alt"></i></button>
             </div>
         </aside>
 
-        <!-- CONTENIDO -->
         <main class="main-content">
             <header class="top-header">
-                <div class="page-title">
-                    <h2 id="current-view-title">Dashboard General</h2>
-                </div>
-                <div class="top-actions">
-                    <button class="btn-icon" title="Notificaciones"><i class="fas fa-bell"></i></button>
-                </div>
+                <div class="page-title"><h2 id="current-view-title">Dashboard</h2></div>
             </header>
-
-            <div id="workspace" class="workspace">
-                <!-- Carga dinámica -->
-            </div>
+            <div id="workspace" class="workspace"></div>
         </main>
     </div>
 
-    <!-- === IMPORTANTE: LIBRERÍAS DE FIREBASE CORREGIDAS === -->
-    <!-- 1. App (Base) -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <!-- 2. Auth (Login) -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-    <!-- 3. Storage (Archivos) - ESTA FALTABA -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
-    
-    <!-- LÓGICA PRINCIPAL -->
-    <script src="script.js"></script>
+    <div id="loader-overlay"><div class="spinner"></div><p style="margin-top:10px;">Procesando...</p></div>
 
-    <!-- GOOGLE MAPS (NOMBRE DE FUNCIÓN CORREGIDO: initApp) -->
+    <!-- ================= TEMPLATES (MOLDES) ================= -->
+    
+    <!-- 1. FORMULARIO COTIZADOR -->
+    <template id="tpl-cotizador">
+        <div class="tool-container">
+            <div id="form-container">
+                <form id="quote-form">
+                    <fieldset class="form-fieldset">
+                        <legend>Datos del Cliente</legend>
+                        <div class="form-grid">
+                            <div class="form-group"><label>Tu Nombre</label><select id="asesor" required></select></div>
+                            <div class="form-group"><label>WhatsApp</label><input type="text" id="whatsapp-asesor" readonly></div>
+                            <div class="form-group full-width"><label>Cliente</label><input type="text" id="nombre-cliente" required></div>
+                            <div class="form-group"><label>Adultos</label><select id="adultos"></select></div>
+                            <div class="form-group"><label>Niños</label><select id="ninos"></select></div>
+                            <div class="form-group full-width"><label>Nº Cotización</label><input type="text" id="cotizacion-num" readonly></div>
+                        </div>
+                    </fieldset>
+                    
+                    <div id="dynamic-sections"></div>
+                    
+                    <div class="add-buttons-container">
+                        <button type="button" class="add-section-btn" onclick="addSection('hotel')">+ Hotel</button>
+                        <button type="button" class="add-section-btn" onclick="addSection('flights')">+ Vuelos</button>
+                        <button type="button" class="add-section-btn" onclick="addSection('tours')">+ Tours</button>
+                    </div>
+
+                    <button type="submit" class="submit-button">Generar Cotización</button>
+                </form>
+            </div>
+            
+            <div id="result-container" style="display:none;">
+                <div id="voucher-to-print">
+                    <!-- Aquí se inyectará el PDF visualmente -->
+                </div>
+                <div class="action-buttons">
+                    <button class="action-button download" onclick="downloadPDF()">Descargar PDF</button>
+                    <button class="action-button edit" onclick="editQuote()">Editar</button>
+                    <button class="action-button secondary" onclick="loadView('quotes')">Nueva</button>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- 2. TEMPLATES DE SECCIONES (HOTEL, VUELOS...) -->
+    <template id="tpl-hotel">
+        <fieldset class="form-fieldset hotel-section">
+            <button type="button" class="remove-section-btn" onclick="this.parentElement.remove()">×</button>
+            <legend>Hotel</legend>
+            <div class="form-grid">
+                <div class="form-group full-width"><label>Destino</label><input type="text" class="inp-destino" required></div>
+                <div class="form-group full-width"><label>Hotel</label><input type="text" class="inp-hotel" required></div>
+                <div class="form-group"><label>Valor Total</label><input type="text" class="inp-valor" required></div>
+                <div class="form-group"><label>Check-in</label><input type="date" class="inp-fecha" required></div>
+                <div class="form-group full-width"><label>Fotos (Pegar)</label><div class="gallery-paste-areas"><div class="paste-area"><p>Foto 1</p><img style="display:none"></div><div class="paste-area"><p>Foto 2</p><img style="display:none"></div><div class="paste-area"><p>Foto 3</p><img style="display:none"></div></div></div>
+            </div>
+        </fieldset>
+    </template>
+
+    <template id="tpl-flights">
+        <fieldset class="form-fieldset flight-section">
+            <button type="button" class="remove-section-btn" onclick="this.parentElement.remove()">×</button>
+            <legend>Vuelos</legend>
+            <div class="form-grid">
+                <div class="form-group full-width"><label>Ciudad Salida</label><input type="text" class="inp-ciudad" required></div>
+                <div class="form-group full-width"><label>Banner Vuelo</label><div class="paste-area"><p>Pegar Imagen</p><img style="display:none"></div></div>
+                <div class="form-group"><label>Aerolínea</label><input type="text" class="inp-aerolinea"></div>
+                <div class="form-group"><label>Precio</label><input type="text" class="inp-precio"></div>
+            </div>
+        </fieldset>
+    </template>
+
+    <script src="script.js"></script>
     <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyASTSvQgNsR-4wQeIuHAd6S9_fTmaKG56g&libraries=places&callback=initApp"></script>
 </body>
 </html>
