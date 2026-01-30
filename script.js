@@ -20,24 +20,68 @@ const mainApp = document.getElementById('main-app');
 const workspace = document.getElementById('workspace');
 const titleView = document.getElementById('current-view-title');
 
-// --- SISTEMA DE LOGIN ---
+// --- SISTEMA DE LOGIN (SIMULADO) ---
+const MOCK_USERS = {
+    'admin': { 
+        pass: 'admin123', 
+        name: 'Gerencia General', 
+        role: 'Administrador', 
+        initials: 'AD' 
+    },
+    'katherine': { 
+        pass: '123456', 
+        name: 'Katherine Rueda', 
+        role: 'Asesor Comercial', 
+        initials: 'KR' 
+    },
+    'daniela': { 
+        pass: '123456', 
+        name: 'Daniela Ardila', 
+        role: 'Asesor Comercial', 
+        initials: 'DA' 
+    }
+};
+
 loginForm.addEventListener('submit', (e) => {
     e.preventDefault();
-    const user = document.getElementById('username-input').value;
-    const pass = document.getElementById('password-input').value;
+    
+    // Obtenemos lo que escribió el usuario y lo convertimos a minúsculas
+    const userKey = document.getElementById('username-input').value.trim().toLowerCase();
+    const pass = document.getElementById('password-input').value.trim();
+    const loginErrorMsg = document.getElementById('login-error');
 
-    // Validación simulada (luego conectamos Firebase)
-    if(pass === '123' || pass === 'HOLA') {
+    // Verificamos si el usuario existe y la contraseña coincide
+    if (MOCK_USERS[userKey] && MOCK_USERS[userKey].pass === pass) {
+        
+        // 1. Ocultar Login y mostrar App
         loginOverlay.style.display = 'none';
         mainApp.style.display = 'flex';
-        document.getElementById('user-name-display').textContent = user.toUpperCase();
-        document.getElementById('user-initials').textContent = user.substring(0,2).toUpperCase();
-        loadView('home'); // Cargar inicio
+        
+        // 2. Cargar datos del usuario en el Menú Lateral
+        const userData = MOCK_USERS[userKey];
+        document.getElementById('user-name-display').textContent = userData.name;
+        document.getElementById('user-role-display').textContent = userData.role;
+        document.getElementById('user-initials').textContent = userData.initials;
+        
+        // 3. Resetear error
+        loginErrorMsg.style.display = 'none';
+        
+        // 4. Cargar vista inicial
+        loadView('home'); 
+
     } else {
-        document.getElementById('login-error').style.display = 'block';
+        // Mostrar error si falla
+        loginErrorMsg.textContent = "Usuario o contraseña incorrectos";
+        loginErrorMsg.style.display = 'block';
+        // Temblor visual (opcional)
+        document.querySelector('.login-box').animate([
+            { transform: 'translateX(0)' },
+            { transform: 'translateX(-10px)' },
+            { transform: 'translateX(10px)' },
+            { transform: 'translateX(0)' }
+        ], { duration: 300 });
     }
 });
-
 document.getElementById('logout-btn').addEventListener('click', () => {
     location.reload(); // Recargar para salir
 });
@@ -168,3 +212,4 @@ function renderTool(toolName) {
 function initApp() {
     console.log("Google Maps Cargado");
 }
+
