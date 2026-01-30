@@ -1,8 +1,8 @@
-// ==========================================
-// CONFIGURACIÓN FIREBASE (TRANQUILLIUM)
-// ==========================================
-console.log("Iniciando Sistema Viventura...");
+/* ==========================================
+   TRANQUILLUM CORE - VIVANTURA SYSTEM V2.0
+   ========================================== */
 
+// 1. CONFIGURACIÓN FIREBASE (PROYECTO: tranquillium-32bb8)
 const firebaseConfig = {
     apiKey: "AIzaSyD6II6k1Y4_bpzeH45hj_7-nQpxYmbP0wE",
     authDomain: "tranquillium-32bb8.firebaseapp.com",
@@ -12,26 +12,20 @@ const firebaseConfig = {
     appId: "1:478019073507:web:740e0b826d7881729c1cd6"
 };
 
-// Inicializar Firebase
-try {
-    if (typeof firebase === 'undefined') {
-        console.error("ERROR CRÍTICO: El SDK de Firebase no ha cargado en el HTML.");
-    } else {
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-            console.log("Firebase conectado correctamente.");
-        }
+// Inicialización Segura
+if (typeof firebase !== 'undefined') {
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+        console.log("Firebase conectado.");
     }
-} catch (e) {
-    console.error("Error inicializando Firebase:", e);
+} else {
+    console.error("ERROR: Librerías de Firebase no cargadas.");
 }
 
-const auth = typeof firebase !== 'undefined' ? firebase.auth() : null;
-const storage = typeof firebase !== 'undefined' ? firebase.storage() : null;
+const auth = firebase.auth();
+const storage = firebase.storage(); // Ahora sí funcionará
 
-// ==========================================
-// ELEMENTOS DEL DOM
-// ==========================================
+// 2. ELEMENTOS DEL DOM
 const loginOverlay = document.getElementById('login-overlay');
 const mainApp = document.getElementById('main-app');
 const loginForm = document.getElementById('login-form');
@@ -39,117 +33,72 @@ const usernameInput = document.getElementById('username-input');
 const passwordInput = document.getElementById('password-input');
 const loginError = document.getElementById('login-error');
 const logoutBtn = document.getElementById('logout-btn');
-const workspace = document.getElementById('workspace'); // Donde se carga el contenido
+const workspace = document.getElementById('workspace');
 
-// ==========================================
-// LÓGICA DE AUTENTICACIÓN (LOGIN REAL)
-// ==========================================
+// 3. MAPAS (SOLUCIÓN ERROR CONSOLA)
+// Definimos esta función en el objeto window para que la API de Google la encuentre
+window.initApp = function() {
+    console.log("API de Google Maps cargada correctamente.");
+};
 
-// 1. Manejar el Submit del Login
-if (loginForm) {
-    loginForm.onsubmit = function (e) {
-        e.preventDefault();
-        
-        // Asumimos dominio por defecto si no lo escriben
-        let email = usernameInput.value.trim();
-        if (!email.includes('@')) {
-            email = email + '@tranquillium.com';
-        }
-        
-        const password = passwordInput.value.trim();
+// 4. LÓGICA DE LOGIN
+loginForm.onsubmit = (e) => {
+    e.preventDefault();
+    let email = usernameInput.value.trim();
+    if (!email.includes('@')) email += '@tranquillium.com';
+    const password = passwordInput.value.trim();
 
-        auth.signInWithEmailAndPassword(email, password)
-            .then((userCredential) => {
-                // Login exitoso, el onAuthStateChanged se encargará del resto
-                console.log("Usuario logueado:", userCredential.user.email);
-            })
-            .catch((error) => {
-                console.error("Error login:", error);
-                loginError.textContent = 'Usuario o contraseña incorrectos';
-                loginError.style.display = 'block';
-                passwordInput.value = '';
-            });
-    };
-}
-
-// 2. Manejar Logout
-if (logoutBtn) {
-    logoutBtn.onclick = function () {
-        auth.signOut().then(() => {
-            console.log("Sesión cerrada");
-            window.location.reload();
+    auth.signInWithEmailAndPassword(email, password)
+        .then((cred) => {
+            console.log("Login exitoso:", cred.user.email);
+            // El observador onAuthStateChanged hará el resto
+        })
+        .catch((error) => {
+            console.error(error);
+            loginError.style.display = 'block';
         });
-    };
-}
+};
 
-// 3. Escuchador de Estado (Persistencia)
-if (auth) {
-    auth.onAuthStateChanged((user) => {
-        if (user) {
-            // --- USUARIO LOGUEADO ---
-            console.log("Acceso concedido a:", user.email);
-            
-            // Ocultar login, mostrar app
-            if (loginOverlay) loginOverlay.style.display = 'none';
-            if (mainApp) mainApp.style.display = 'flex';
+logoutBtn.onclick = () => {
+    auth.signOut().then(() => location.reload());
+};
 
-            // Configurar interfaz según usuario
-            const username = user.email.split('@')[0];
-            updateUserProfile(username);
-            
-            // Cargar Dashboard por defecto
-            loadView('home');
+// 5. OBSERVADOR DE ESTADO (PERSISTENCIA)
+auth.onAuthStateChanged((user) => {
+    if (user) {
+        loginOverlay.style.display = 'none';
+        mainApp.style.display = 'flex';
+        
+        const userClean = user.email.split('@')[0];
+        document.getElementById('user-name-display').textContent = userClean.toUpperCase();
+        document.getElementById('user-initials').textContent = userClean.substring(0, 2).toUpperCase();
+        
+        loadView('home');
+    } else {
+        loginOverlay.style.display = 'flex';
+        mainApp.style.display = 'none';
+    }
+});
 
-        } else {
-            // --- NO LOGUEADO ---
-            if (loginOverlay) loginOverlay.style.display = 'flex';
-            if (mainApp) mainApp.style.display = 'none';
-        }
-    });
-}
-
-// Actualizar datos visuales del perfil
-function updateUserProfile(username) {
-    const nameDisplay = document.getElementById('user-name-display');
-    const roleDisplay = document.getElementById('user-role-display');
-    const initialsDisplay = document.getElementById('user-initials');
-
-    if (nameDisplay) nameDisplay.textContent = username.toUpperCase();
-    if (initialsDisplay) initialsDisplay.textContent = username.substring(0, 2).toUpperCase();
-
-    // Roles simples basados en el nombre de usuario
-    let role = 'Asesor Comercial';
-    if (username === 'admin' || username === 'gerencia') role = 'Administrador';
-    if (username === 'reservas') role = 'Coord. Reservas';
-    
-    if (roleDisplay) roleDisplay.textContent = role;
-}
-
-
-// ==========================================
-// NAVEGACIÓN Y VISTAS
-// ==========================================
+// 6. ENRUTADOR DE VISTAS
 window.loadView = function(viewName) {
-    // Actualizar menú activo
     document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
-    // Limpiar área
-    workspace.innerHTML = '';
+    workspace.innerHTML = ''; 
 
     if (viewName === 'home') {
         document.getElementById('current-view-title').textContent = "Resumen Operativo";
         renderDashboard();
-    } 
-    else if (viewName === 'crm') {
+    } else if (viewName === 'crm') {
         document.getElementById('current-view-title').textContent = "Gestión de Clientes";
-        renderCRM();
-    }
-    else if (viewName === 'quotes') {
+        workspace.innerHTML = `<h3 style="padding:20px;">Módulo CRM (Próximamente)</h3>`;
+    } else if (viewName === 'quotes') {
         document.getElementById('current-view-title').textContent = "Generador de Cotizaciones";
-        renderTool('cotizador');
-    }
-    else if (viewName === 'confirms') {
+        // Aquí iría el HTML del cotizador
+        workspace.innerHTML = `<h3 style="padding:20px;">Módulo Cotizador Cargando...</h3>`;
+    } else if (viewName === 'confirms') {
         document.getElementById('current-view-title').textContent = "Generador de Confirmación";
-        renderTool('confirmador');
+        // Aquí iría el HTML del confirmador
+        workspace.innerHTML = `<h3 style="padding:20px;">Módulo Confirmador Cargando...</h3>`;
     }
 };
 
@@ -158,27 +107,7 @@ function renderDashboard() {
         <div style="text-align: center; padding: 50px;">
             <img src="https://i.imgur.com/GiTvvrW.png" width="200" style="margin-bottom:20px; filter: grayscale(100%); opacity:0.5;">
             <h3>Bienvenido a Viventura System</h3>
-            <p class="text-muted">Sistema conectado a Firebase.</p>
+            <p class="text-muted">Conectado y listo.</p>
         </div>
     `;
-}
-
-function renderCRM() {
-    workspace.innerHTML = `<h3 style="padding:20px;">Módulo CRM en construcción...</h3>`;
-}
-
-function renderTool(toolType) {
-    // Aquí cargaremos los templates que ya tienes en el HTML
-    // Por ahora un placeholder para verificar que el login funciona
-    workspace.innerHTML = `
-        <div style="padding:40px; text-align:center;">
-            <h3>Cargando ${toolType.toUpperCase()}...</h3>
-            <div class="spinner"></div>
-        </div>
-    `;
-}
-
-// Inicialización de Mapas (Evita errores si no se usa)
-function initAutocomplete() {
-    console.log("Mapas listos");
 }
